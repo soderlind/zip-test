@@ -80,7 +80,7 @@ jobs:
         if: steps.upload.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ download_url }}
+          zip-url: '$download_url'
 
       - name: Cleanup
         if: always()
