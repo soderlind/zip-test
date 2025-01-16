@@ -65,6 +65,14 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
 
+      - name: Output outputs
+        if: steps.upload.outcome == 'success'
+        run: |
+          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_ENV
+          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_ENV
+          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_ENV
+          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_ENV
+
       - name: Generate attestation
         if: steps.upload.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
