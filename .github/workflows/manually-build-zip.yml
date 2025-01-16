@@ -7,12 +7,10 @@ on:
         description: 'Release tag (e.g. v1.0.0)'
         required: true
         type: string
-        pattern: '^v\d+\.\d+\.\d+$'
       zip:
         description: 'Output zip filename (e.g. my-plugin.zip)'
         required: true
         type: string
-        pattern: '^[\w-]+\.zip$'
 
 jobs:
   create-release:
@@ -26,29 +24,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
-
-      - name: Build plugin
-        id: build
+      - name: Build plugin # Remove or modify this step as needed
         run: |
-          if ! composer install --no-dev; then
-            echo "status=failed" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-          echo "status=success" >> $GITHUB_OUTPUT
+          composer install --no-dev
 
       - name: Create zip archive
-        if: steps.build.outputs.status == 'success'
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
@@ -56,7 +36,6 @@ jobs:
           exclusions: '*.git* .editorconfig composer* *.md vendor/*/test* vendor/*/docs'
 
       - name: Upload to release
-        if: steps.build.outputs.status == 'success'
         id: upload
         uses: softprops/action-gh-release@v2
         env:
@@ -64,47 +43,8 @@ jobs:
         with:
           files: ${{ github.event.inputs.zip }}
           tag_name: ${{ github.event.inputs.tag }}
-          fail_on_unmatched_files: true
-          generate_release_notes: true
 
-      - name: Process release outputs
-        if: steps.upload.outcome == 'success'
-        id: process
-        run: |
-          DOWNLOAD_URL=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')
-          if [ -z "$DOWNLOAD_URL" ]; then
-            echo "::error::Failed to extract download URL from assets"
-            exit 1
-          fi
-          {
-            echo "### Release Information"
-            echo "* Release URL: ${{ steps.upload.outputs.url }}"
-            echo "* Release ID: ${{ steps.upload.outputs.id }}"
-            echo "* Download URL: $DOWNLOAD_URL"
-          } >> $GITHUB_STEP_SUMMARY
-          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
-
-      - name: Cleanup release artifacts
-        if: always()
-        run: rm -f ${{ github.event.inputs.zip }}
-    outputs:
-      download_url: ${{ steps.process.outputs.download_url }}
-
-  create-attestation:
-    name: Generate Attestation
-    needs: create-release
-    if: needs.create-release.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-    steps:
       - name: Generate attestation
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: '${{ needs.create-release.outputs.download_url }}'
-
-      - name: Cleanup vendor
-        if: always()
-        run: rm -rf vendor
+          zip-url: $(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')
