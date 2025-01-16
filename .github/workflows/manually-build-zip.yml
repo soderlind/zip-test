@@ -46,6 +46,11 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           fail_on_unmatched_files: true
 
+      - name: Output upload URL
+        run: |
+          echo "::set-output name=upload_url::$(jq -r '.upload_url' $GITHUB_EVENT_PATH)"
+          echo ${{ steps.upload.outputs.upload_url }}
+
       - name: Generate build provenance attestation
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
