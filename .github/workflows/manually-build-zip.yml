@@ -84,9 +84,16 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
           echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
+      - name: Cleanup release artifacts
+        if: always()
+        run: rm -f ${{ github.event.inputs.zip }}
+    outputs:
+      download_url: ${{ steps.process.outputs.download_url }}
+
   create-attestation:
     name: Generate Attestation
     needs: create-release
+    if: needs.create-release.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       attestations: write
@@ -94,13 +101,10 @@ jobs:
       id-token: write
     steps:
       - name: Generate attestation
-        if: steps.process.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ create-release.process.outputs.download_url }}
+          zip-url: ${{ needs.create-release.outputs.download_url }}
 
-      - name: Cleanup
+      - name: Cleanup vendor
         if: always()
-        run: |
-          rm -f ${{ github.event.inputs.zip }}
-          rm -rf vendor
+        run: rm -rf vendor
