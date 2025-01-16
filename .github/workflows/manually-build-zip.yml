@@ -7,10 +7,12 @@ on:
         description: 'Release tag (e.g. v1.0.0)'
         required: true
         type: string
+        pattern: '^v\d+\.\d+\.\d+$'
       zip:
         description: 'Output zip filename (e.g. my-plugin.zip)'
         required: true
         type: string
+        pattern: '^[\w-]+\.zip$'
 
 jobs:
   create-release:
@@ -22,38 +24,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
       - name: Build plugin
+        id: build
         run: |
           if ! composer install --no-dev; then
-            echo "::error::Plugin build failed"
+            echo "status=failed" >> $GITHUB_OUTPUT
             exit 1
           fi
+          echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Create zip archive
+        if: steps.build.outputs.status == 'success'
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: ${{ github.event.inputs.zip }}
-          exclusions: '*.git* .editorconfig composer* *.md'
+          exclusions: '*.git* .editorconfig composer* *.md vendor/*/test* vendor/*/docs'
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        if: steps.build.outputs.status == 'success'
         id: upload
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: ${{ github.event.inputs.zip }}
           tag_name: ${{ github.event.inputs.tag }}
           fail_on_unmatched_files: true
+          generate_release_notes: true
 
-      - name: Output upload URL
-        run: |
-          echo ${{ steps.upload.outputs.html_url }}
-
-      - name: Generate build provenance attestation
+      - name: Generate attestation
+        if: steps.upload.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ steps.upload.outputs.html_url }}
+          zip-url: ${{ steps.upload.outputs.url }}/${{ github.event.inputs.zip }}
+
       - name: Cleanup
         if: always()
-        run: rm -f ${{ github.event.inputs.zip }}
+        run: |
+          rm -f ${{ github.event.inputs.zip }}
+          rm -rf vendor
