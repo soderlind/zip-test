@@ -77,6 +77,21 @@ jobs:
           echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_STEP_SUMMARY
           echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_ENV
 
+  create.attestation:
+    name: Create Attestation
+    runs-on: ubuntu-latest
+    needs: create-release
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Generate attestation
+        if: steps.upload.outcome == 'success'
+        uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
+        with:
+          zip-url: ${{ env.download_url }}
+
       - name: Cleanup
         if: always()
         run: |
