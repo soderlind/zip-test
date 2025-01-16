@@ -68,16 +68,17 @@ jobs:
       - name: Output outputs
         if: steps.upload.outcome == 'success'
         run: |
-          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_ENV
-          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_ENV
-          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_ENV
-          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_ENV
+          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_OUTPUT
+          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_OUTPUT
+          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_OUTPUT
+          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_OUTPUT
+          echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_ENV
 
       - name: Generate attestation
         if: steps.upload.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ steps.upload.outputs.url }}/${{ github.event.inputs.zip }}
+          zip-url: ${{ env.download_url }}
 
       - name: Cleanup
         if: always()
