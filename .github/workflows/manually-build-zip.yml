@@ -67,20 +67,28 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
 
-      - name: Output outputs
+      - name: Process release outputs
         if: steps.upload.outcome == 'success'
+        id: process
         run: |
-          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_STEP_SUMMARY
-          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_STEP_SUMMARY
-          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_STEP_SUMMARY
-          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_STEP_SUMMARY
-          echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_STEP_SUMMARY
-          echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_ENV
+          DOWNLOAD_URL=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "::error::Failed to extract download URL from assets"
+            exit 1
+          fi
+          {
+            echo "### Release Information"
+            echo "* Release URL: ${{ steps.upload.outputs.url }}"
+            echo "* Release ID: ${{ steps.upload.outputs.id }}"
+            echo "* Download URL: $DOWNLOAD_URL"
+          } >> $GITHUB_STEP_SUMMARY
+          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+
       - name: Generate attestation
-        if: steps.upload.outcome == 'success'
+        if: steps.process.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: '${download_url}'
+          zip-url: ${{ steps.process.outputs.download_url }}
 
       - name: Cleanup
         if: always()
