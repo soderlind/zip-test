@@ -103,7 +103,7 @@ jobs:
       - name: Generate attestation
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ needs.create-release.outputs.download_url }}
+          zip-url: '${{ needs.create-release.outputs.download_url }}'
 
       - name: Cleanup vendor
         if: always()
