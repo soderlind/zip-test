@@ -70,10 +70,11 @@ jobs:
       - name: Output outputs
         if: steps.upload.outcome == 'success'
         run: |
-          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_OUTPUT
-          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_OUTPUT
-          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_OUTPUT
-          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_OUTPUT
+          echo "url=${{ steps.upload.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "id=${{ steps.upload.outputs.id }}" >> $GITHUB_STEP_SUMMARY
+          echo "upload_url=${{ steps.upload.outputs.upload_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "assets=${{ steps.upload.outputs.assets }}" >> $GITHUB_STEP_SUMMARY
+          echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_STEP_SUMMARY
           echo "download_url=$(echo '${{ steps.upload.outputs.assets }}' | jq -r '.[0].browser_download_url')" >> $GITHUB_ENV
 
       - name: Generate attestation
