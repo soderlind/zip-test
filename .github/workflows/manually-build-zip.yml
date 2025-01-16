@@ -19,7 +19,9 @@ jobs:
     name: Create Release Package
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      attestations: write
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
