@@ -1,44 +1,56 @@
-name: Manually Build release zip
+name: Manually Build Release Zip
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to deploy'
+        description: 'Release tag (e.g. v1.0.0)'
         required: true
         type: string
-        default: ''
       zip:
-        description: 'Name of zip to deploy'
+        description: 'Output zip filename (e.g. my-plugin.zip)'
         required: true
         type: string
-        default: ''
 
 jobs:
-  build:
-    name: Build release zip
+  create-release:
+    name: Create Release Package
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build plugin # Remove or modify this step as needed
+      - name: Build plugin
         run: |
-          composer install --no-dev
+          if ! composer install --no-dev; then
+            echo "::error::Plugin build failed"
+            exit 1
+          fi
 
-      - name: Archive Release
-        uses: thedoctor0/zip-release@0.7.5
+      - name: Create zip archive
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
-          filename: 'wp-loupe.zip'
+          filename: ${{ github.event.inputs.zip }}
           exclusions: '*.git* .editorconfig composer* *.md'
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        id: upload
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: wp-loupe.zip
+          files: ${{ github.event.inputs.zip }}
           tag_name: ${{ github.event.inputs.tag }}
+          fail_on_unmatched_files: true
+
+      - name: Generate build provenance attestation
+        uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
+        with:
+          zip-path: ${{ steps.upload.outputs.upload_url }}
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ${{ github.event.inputs.zip }}
