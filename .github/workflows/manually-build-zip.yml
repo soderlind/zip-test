@@ -84,11 +84,20 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
           echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
+  create-attestation:
+    name: Generate Attestation
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
       - name: Generate attestation
         if: steps.process.outcome == 'success'
         uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
         with:
-          zip-url: ${{ steps.process.outputs.download_url }}
+          zip-url: ${{ create-release.process.outputs.download_url }}
 
       - name: Cleanup
         if: always()
