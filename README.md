@@ -32,3 +32,65 @@ This repository contains content used to test the [manually-build-zip.yml](.gith
       zip-path: ${{ github.event.inputs.zip }}
       zip-url: ${{ steps.asset_url.outputs.final_url }}
   ```
+
+## [manually-build-zip.yml](.github/workflows/manually-build-zip.yml):
+
+```yml
+name: Manually Build Release Zip
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        type: string
+      zip:
+        description: 'Output zip filename (e.g. my-plugin.zip)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    name: Create Release Package
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build plugin # Remove or modify this step as needed
+        run: |
+          composer install --no-dev
+
+      - name: Create zip archive
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: 'zip'
+          filename: ${{ github.event.inputs.zip }}
+          exclusions: '*.git* .editorconfig composer* *.md vendor/*/test* vendor/*/docs'
+
+      - name: Upload to release
+        id: upload
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: ${{ github.event.inputs.zip }}
+          tag_name: ${{ github.event.inputs.tag }}
+
+      - name: Get final asset URL
+        id: asset_url
+        run: |
+          URL="$(curl -s -I -o /dev/null -w "%{redirect_url}" "${{ fromJson(steps.upload.outputs.assets)[0].browser_download_url }}")"
+          echo "final_url=${URL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate attestation
+        uses: johnbillion/action-wordpress-plugin-attestation@0.7.0
+        with:
+          zip-path: ${{ github.event.inputs.zip }}
+          zip-url: ${{ steps.asset_url.outputs.final_url }}
+```
