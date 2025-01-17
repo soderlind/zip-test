@@ -7,22 +7,22 @@ This repository contains content used to test the [manually-build-zip.yml](.gith
 - Create a zip file with the repository’s content ([thedoctor0/zip-release](https://github.com/thedoctor0/zip-release?tab=readme-ov-file#zip-release-))
   ```yml
   - name: Create zip archive
-      uses: thedoctor0/zip-release@0.7.6
-      with:
-        type: 'zip'
-        filename: ${{ github.event.inputs.zip }}
-        exclusions: '*.git* .editorconfig composer* *.md vendor/*/test* vendor/*/docs'
+    uses: thedoctor0/zip-release@0.7.6
+    with:
+      type: 'zip'
+      filename: ${{ github.event.inputs.zip }}
+      exclusions: '*.git* .editorconfig composer* *.md vendor/*/test* vendor/*/docs'
   ```
 - Upload the zip file to the release page ([softprops/action-gh-release](https://github.com/softprops/action-gh-release?tab=readme-ov-file#--action-gh-release))
   ```yml
   - name: Upload to release
-      id: upload
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        files: ${{ github.event.inputs.zip }}
-        tag_name: ${{ github.event.inputs.tag }}
+    id: upload
+    uses: softprops/action-gh-release@v2
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      files: ${{ github.event.inputs.zip }}
+      tag_name: ${{ github.event.inputs.tag }}
   ```
 - Create an attestation for the zip file ([johnbillion/action-wordpress-plugin-attestation](https://github.com/johnbillion/action-wordpress-plugin-attestation?tab=readme-ov-file#wordpress-plugin-attestation))
   ```yml
