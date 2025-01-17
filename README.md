@@ -5,8 +5,8 @@ This repository contains content used to test the [manually-build-zip.yml](.gith
 ## Actions performed by the workflow:
 
 - Create a zip file with the repository’s content
-  - [thedoctor0/zip-release](https://github.com/thedoctor0/zip-release)
+  - [thedoctor0/zip-release](https://github.com/thedoctor0/zip-release?tab=readme-ov-file#zip-release-)
 - Upload the zip file to the release page
-  - [softprops/action-gh-release](https://github.com/softprops/action-gh-release)
+  - [softprops/action-gh-release](https://github.com/softprops/action-gh-release?tab=readme-ov-file#--action-gh-release)
 - Create an attestation for the zip file
-  - [johnbillion/action-wordpress-plugin-attestation](https://github.com/johnbillion/action-wordpress-plugin-attestation)
+  - [johnbillion/action-wordpress-plugin-attestation](https://github.com/johnbillion/action-wordpress-plugin-attestation?tab=readme-ov-file#wordpress-plugin-attestation)
